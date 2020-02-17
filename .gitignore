@@ -1,0 +1,12 @@
+*.vcxproj*
+
+AntEdgeDetection.sln
+
+.vs/*
+
+Debug/*
+
+heuristic.txt
+
+intensity.txt
+
