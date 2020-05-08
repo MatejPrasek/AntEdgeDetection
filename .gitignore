@@ -5,6 +5,7 @@ AntEdgeDetection.sln
 .vs/*
 
 Debug/*
+Release/*
 
 heuristic.txt
 

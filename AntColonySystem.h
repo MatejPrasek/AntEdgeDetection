@@ -21,7 +21,7 @@ private:
 	vector<tuple<int, int>> alreadyVisitedPositions;
 	vector<Ant*> ants;
 
-	tuple<tuple<int, int>, float, float> GetNeighbor(Ant* ant, int index);
+	tuple<tuple<int, int>, float, float> GetMooreNeighborhood(Ant* ant, int index);
 	tuple<int, int> SelectNextPixel(Ant* ant);
 	void Move(Ant* ant);
 	void UpdateGlobalPheromone();

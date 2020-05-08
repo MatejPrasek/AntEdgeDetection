@@ -10,6 +10,8 @@ AntColonySystem::AntColonySystem(Parameters* parameters)
 	parameters->pheromone = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
 	parameters->edges = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
 
+	srand(time(NULL));
+	
 	cv::Mat initPosition = cv::Mat(maxHeight, maxWidth, CV_8UC1);
 	for (int i = 0; i < maxWidth; i++)
 		for (int j = 0; j < maxHeight; j++)
@@ -46,7 +48,7 @@ AntColonySystem::AntColonySystem(Parameters* parameters)
 	cv::waitKey(0);
 }
 
-tuple<tuple<int, int>, float, float> AntColonySystem::GetNeighbor(Ant* ant, int index)
+tuple<tuple<int, int>, float, float> AntColonySystem::GetMooreNeighborhood(Ant* ant, int index)
 {
 	int width = std::get<0>(ant->position) + index % 3 - 1;
 	int height = std::get<1>(ant->position) + index / 3 - 1;
@@ -54,12 +56,12 @@ tuple<tuple<int, int>, float, float> AntColonySystem::GetNeighbor(Ant* ant, int 
 
 	//current position
 	if(index == 4)
-		return tuple<tuple<int, int>, int, float>{position, 0, 0.0};
+		return tuple<tuple<int, int>, int, float>{ant->position, 0, 0.0};
 	
 	//stay inside picture
 	if (width < 0 || width >= maxWidth ||
 		height < 0 || height >= maxHeight)
-		return tuple<tuple<int, int>, int, float>{position, 0, 0.0};
+		return tuple<tuple<int, int>, int, float>{ant->position, 0, 0.0};
 
 	//verify that neighbor position isn't in ant's memory
 	for (int i = size(ant->visited); i > size(ant->visited) - parameters->memory; i--)
@@ -77,9 +79,13 @@ tuple<tuple<int, int>, float, float> AntColonySystem::GetNeighbor(Ant* ant, int 
 tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 {
 	const int surrounding = 9;
-	tuple<tuple<int, int>, float, float> neighbors[surrounding];
+	vector<tuple<tuple<int, int>, float, float>> neighbors;
 	for (int i = 0; i < surrounding; i++)
-			neighbors[i] = GetNeighbor(ant, i);
+	{
+		auto neighbor = GetMooreNeighborhood(ant, i);
+		if (get<0>(neighbor) != ant->position)
+			neighbors.push_back(neighbor);
+	}
 
 	float q = float(rand()) / RAND_MAX;
 
@@ -89,7 +95,7 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 	{
 		int maxIndex = 0;
 		float maxValue = 0;
-		for (int i = 0; i < surrounding; ++i)
+		for (int i = 0; i < neighbors.size(); ++i)
 		{
 			float value = pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta);
 			if (value > maxValue)
@@ -98,20 +104,25 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 				maxIndex = i;
 			}
 		}
+
+		// No valid neighbor, return random neighbor
+		if(maxValue == 0)
+			return std::get<0>(neighbors[rand() % neighbors.size()]);
+	
 		return std::get<0>(neighbors[maxIndex]);
 	}
 	else
 	{
 		float sum = 0;
-		for (int i = 0; i < surrounding; ++i)
+		for (int i = 0; i < neighbors.size(); ++i)
 		{
 			sum += pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta);
 		}
 
 		int maxIndex = 0;
-		float maxValue = 0;
-		for (int i = 0; i < surrounding; ++i)
-		{
+		float maxValue = -1;
+		for (int i = 0; i < neighbors.size(); ++i)
+		{			
 			float value = pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta) / sum;
 			if (value > maxValue)
 			{
@@ -120,6 +131,10 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 			}
 		}
 
+		// No valid neighbor, return random neighbor
+		if (maxValue == 0)
+			return std::get<0>(neighbors[rand() % neighbors.size()]);
+		
 		return std::get<0>(neighbors[maxIndex]);
 	}
 }
@@ -227,8 +242,8 @@ void AntColonySystem::DisplayResults()
 	
 	for (tuple<int, int> position : alreadyVisitedPositions)
 	{
-		parameters->edges[std::get<0>(position)][std::get<1>(position)] = 
-			int(round(abs((GetPheromone(position) - min) / diff) * 255));
+		parameters->edges[std::get<0>(position)][std::get<1>(position)] = int(round(abs((GetPheromone(position) - min) / diff) * 255));
+		//parameters->edges[std::get<0>(position)][std::get<1>(position)] = 255;
 	}
 
 	cv::Mat img = cv::Mat(maxHeight, maxWidth, CV_8UC1);
