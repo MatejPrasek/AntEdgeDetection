@@ -21,14 +21,16 @@ private:
 	vector<tuple<int, int>> alreadyVisitedPositions;
 	vector<Ant*> ants;
 
-	tuple<tuple<int, int>, int, float> GetNeighbor(Ant* ant, int index);
+	tuple<tuple<int, int>, float, float> GetNeighbor(Ant* ant, int index);
 	tuple<int, int> SelectNextPixel(Ant* ant);
 	void Move(Ant* ant);
 	void UpdateGlobalPheromone();
 	void UpdateLocalPheromone(Ant* ant);
-	int Heuristic(tuple<int, int> position);
+	float GetHeuristic(tuple<int, int> position);
 	void DisplayResults();
 	void ResetAntsPheromone();
-	float Pheromone(tuple<int, int> position);
+	float GetPheromone(tuple<int, int> position);
+	void UpdatePheromone(tuple<int, int> position, float value);
+	void SetPheromone(tuple<int, int> position, float value);
 };
 
