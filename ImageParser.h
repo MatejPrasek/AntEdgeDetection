@@ -8,18 +8,5 @@
 #include <iostream>
 #include "Parameters.h"
 
-using namespace cv;
-using namespace std;
-
-class ImageParser
-{
-public:
-	ImageParser(Parameters* parameters);
-	void ParseIntensity();
-
-private:
-	string path;
-	Parameters* parameters;
-	int CalculateHeuristic(Mat intensity, int row, int col);
-};
+void ParseIntensity(Parameters &parameters);
 

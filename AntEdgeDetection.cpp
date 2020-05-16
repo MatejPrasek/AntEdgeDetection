@@ -8,25 +8,19 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-	cout << "Parsing parameters." << endl;
-	auto parameters = new Parameters();
-
-	auto cp = new CommandParser();
-	cp->Parse(argc, argv, parameters);
-	delete cp;
+	cout << "Parsing m_parameters." << endl;
+	Parameters parameters;
+	
+	Parse(argc, argv, parameters);
 	cout << "Parameters parsed." << endl;
 
 	cout << "Parsing image." << endl;
-	auto ip = new ImageParser(parameters);
-	ip->ParseIntensity();
-	delete ip;
+	ParseIntensity(parameters);
 	cout << "Image parsed." << endl;
 
 	cout << "Starting simulation." << endl;
-	auto acs = new AntColonySystem(parameters);
-	acs->Run();
-	delete acs;
+	AntColonySystem acs (std::move(parameters));
+	acs.Run();
 	cout << "Simulation ended." << endl;
 
-	delete parameters;
 }

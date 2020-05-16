@@ -1,60 +1,9 @@
 #include "ImageParser.h"
 
-ImageParser::ImageParser(Parameters* parameters)
-{
-	path = parameters->imagePath;
-	this->parameters = parameters;
-}
+using namespace cv;
+using namespace std;
 
-void ImageParser::ParseIntensity()
-{
-	Mat RGBImage;
-	RGBImage = imread(path);
-
-	Mat grayScaleImage(RGBImage.size(), CV_8UC1);
-
-	cvtColor(RGBImage, grayScaleImage, COLOR_RGB2GRAY);
-
-	ofstream intensity;
-	intensity.open("intensity.txt");
-	ofstream heuristic;
-	heuristic.open("heuristic.txt");
-
-	parameters->intensity = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
-	parameters->heuristic = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
-
-	for (int i = 0; i < grayScaleImage.cols; i++)
-	{
-		for (int j = 0; j < grayScaleImage.rows; j++)
-		{
-			parameters->intensity[i][j] = int(grayScaleImage.at<uchar>(j, i));
-			parameters->heuristic[i][j] = CalculateHeuristic(grayScaleImage, j, i);
-
-			intensity << parameters->intensity[i][j] << " ";
-			heuristic << parameters->heuristic[i][j] << " ";
-		}
-		intensity << endl;
-		heuristic << endl;
-	}
-	intensity.close();
-	heuristic.close();
-
-	//Mat img = Mat(grayScaleImage.rows, grayScaleImage.cols, CV_8UC1);
-	//for (int i = 0; i < grayScaleImage.cols; i++)
-	//{
-	//	for (int j = 0; j < grayScaleImage.rows; j++)
-	//	{
-	//		img.at<uchar>(j, i) = parameters->intensity[i][j];
-	//	}
-	//}
-
-	//namedWindow("Display window", WINDOW_AUTOSIZE);
-	//imshow("Display window", img);        
-
-	//waitKey(0);
-}
-
-int ImageParser::CalculateHeuristic(Mat intensity, int row, int col)
+int CalculateHeuristic(Mat intensity, int row, int col)
 {
 	int weight = 0;
 	int maxRow = intensity.rows;
@@ -78,3 +27,52 @@ int ImageParser::CalculateHeuristic(Mat intensity, int row, int col)
 
 	return weight;
 }
+
+void ParseIntensity(Parameters &parameters)
+{
+	Mat RGBImage;
+	RGBImage = imread(parameters.imagePath);
+
+	Mat grayScaleImage(RGBImage.size(), CV_8UC1);
+
+	cvtColor(RGBImage, grayScaleImage, COLOR_RGB2GRAY);
+
+	ofstream intensity;
+	intensity.open("intensity.txt");
+	ofstream heuristic;
+	heuristic.open("heuristic.txt");
+
+	parameters.intensity = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
+	parameters.heuristic = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
+
+	for (int i = 0; i < grayScaleImage.cols; i++)
+	{
+		for (int j = 0; j < grayScaleImage.rows; j++)
+		{
+			parameters.intensity[i][j] = int(grayScaleImage.at<uchar>(j, i));
+			parameters.heuristic[i][j] = CalculateHeuristic(grayScaleImage, j, i);
+
+			intensity << parameters.intensity[i][j] << " ";
+			heuristic << parameters.heuristic[i][j] << " ";
+		}
+		intensity << endl;
+		heuristic << endl;
+	}
+	intensity.close();
+	heuristic.close();
+
+	//Mat img = Mat(grayScaleImage.rows, grayScaleImage.cols, CV_8UC1);
+	//for (int i = 0; i < grayScaleImage.cols; i++)
+	//{
+	//	for (int j = 0; j < grayScaleImage.rows; j++)
+	//	{
+	//		img.at<uchar>(j, i) = m_parameters->intensity[i][j];
+	//	}
+	//}
+
+	//namedWindow("Display window", WINDOW_AUTOSIZE);
+	//imshow("Display window", img);        
+
+	//waitKey(0);
+}
+

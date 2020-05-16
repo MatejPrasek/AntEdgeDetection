@@ -3,11 +3,10 @@
 
 using namespace std;
 
-class Parameters
+struct Parameters
 {
-public:
 	// command line arguments
-	string imagePath;
+	string imagePath{};
 	float alpha{};
 	float beta{};
 	int ants{};
@@ -21,11 +20,11 @@ public:
 	//int verticalPartitions{};
 	int memory{};
 	bool debug{};
+	bool random{};
 
 	// images
 	vector<vector<int>> intensity;
 	vector<vector<int>> heuristic;
 	vector<vector<float>> pheromone;
 	vector<vector<float>> edges;
-
 };

@@ -1,44 +1,58 @@
 #include "AntColonySystem.h"
 
-AntColonySystem::AntColonySystem(Parameters* parameters)
+AntColonySystem::AntColonySystem(Parameters parameters) : m_parameters(std::move(parameters))
 {
-	this->parameters = parameters;
+	maxWidth = m_parameters.heuristic.size();
+	maxHeight = m_parameters.heuristic[0].size();
 
-	maxWidth = parameters->heuristic.size();
-	maxHeight = parameters->heuristic[0].size();
+	m_parameters.pheromone = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
+	m_parameters.edges = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
 
-	parameters->pheromone = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
-	parameters->edges = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
-
-	srand(time(NULL));
+	if(!m_parameters.debug) srand(time(NULL));
 	
 	cv::Mat initPosition = cv::Mat(maxHeight, maxWidth, CV_8UC1);
 	for (int i = 0; i < maxWidth; i++)
 		for (int j = 0; j < maxHeight; j++)
 		{
-			initPosition.at<uchar>(j, i) = parameters->intensity[i][j];
+			initPosition.at<uchar>(j, i) = m_parameters.intensity[i][j];
 		}
 
 	heuristicMax = 0;
 	for (int i = 0; i < maxWidth; i++)
 		for (int j = 0; j < maxHeight; j++) 
 		{
-			if (heuristicMax < parameters->heuristic[i][j])
-				heuristicMax = parameters->heuristic[i][j];
-			parameters->pheromone[i][j] = parameters->tauini;
-			parameters->edges[i][j] = 0;
+			if (heuristicMax < m_parameters.heuristic[i][j])
+				heuristicMax = m_parameters.heuristic[i][j];
+			m_parameters.pheromone[i][j] = m_parameters.tauini;
+			m_parameters.edges[i][j] = 0;
 		}
 
-	//float horizontalSegment = maxWidth / float(parameters->horizontalPartitions);
-	//float verticalSegment = maxHeight / float(parameters->verticalPartitions);
+	//float horizontalSegment = maxWidth / float(m_parameters.horizontalPartitions);
+	//float verticalSegment = maxHeight / float(m_parameters.verticalPartitions);
 
-	ants = vector<Ant*>(parameters->ants);
-	for (int i = 0; i < parameters->ants; ++i)
+	//vector<tuple<tuple<int, int>, int>> MaxHeuristic = vector<tuple<tuple<int, int>, int>>(maxWidth*maxHeight);
+	
+	//for (int i = 0; i < maxWidth; i++)
+	//	for (int j = 0; j < maxHeight; j++)
+	//	{
+	//		MaxHeuristic.emplace_back(tuple<int, int>(i, j), m_parameters.heuristic[i][j]);
+	//	}
+
+	//sort(MaxHeuristic.begin(), MaxHeuristic.end(), SortPositionValueTuple);
+	//todo get only needed values
+	
+	ants = vector<unique_ptr<Ant>>(m_parameters.ants);
+	for (int i = 0; i < m_parameters.ants; ++i)
 	{
+		tuple<int, int> position;
 		//todo non-random starting position
-		tuple<int, int> position = tuple<int, int>(rand() % maxWidth, rand() % maxHeight);
-		
-		ants[i] = new Ant(position, 0, parameters->memory, parameters->constructionSteps);
+		if(m_parameters.random)
+			position = tuple<int, int>(rand() % maxWidth, rand() % maxHeight);
+		//else
+		//{
+		//	
+		//}
+		ants[i] = make_unique<Ant>(position, 0, m_parameters.memory, m_parameters.constructionSteps);
 
 		circle(initPosition, cv::Point(std::get<0>(ants[i]->position), std::get<1>(ants[i]->position)), 2, cv::Scalar(255,255,255));
 	}
@@ -48,42 +62,47 @@ AntColonySystem::AntColonySystem(Parameters* parameters)
 	cv::waitKey(0);
 }
 
-tuple<tuple<int, int>, float, float> AntColonySystem::GetMooreNeighborhood(Ant* ant, int index)
+//bool AntColonySystem::SortPositionValueTuple(const tuple<tuple<int, int>, int> &first, const tuple<tuple<int, int>, int> &second)
+//{
+//	return get<1>(first) < get<1>(second);
+//}
+
+tuple<tuple<int, int>, float, float> AntColonySystem::GetMooreNeighborhood(Ant& ant, int index)
 {
-	int width = std::get<0>(ant->position) + index % 3 - 1;
-	int height = std::get<1>(ant->position) + index / 3 - 1;
+	int width = std::get<0>(ant.position) + index % 3 - 1;
+	int height = std::get<1>(ant.position) + index / 3 - 1;
 	tuple<int, int> position = tuple<int, int>{ width, height };
 
 	//current position
 	if(index == 4)
-		return tuple<tuple<int, int>, int, float>{ant->position, 0, 0.0};
+		return tuple<tuple<int, int>, int, float>{ant.position, 0, 0.0};
 	
 	//stay inside picture
 	if (width < 0 || width >= maxWidth ||
 		height < 0 || height >= maxHeight)
-		return tuple<tuple<int, int>, int, float>{ant->position, 0, 0.0};
+		return tuple<tuple<int, int>, int, float>{ant.position, 0, 0.0};
 
 	//verify that neighbor position isn't in ant's memory
-	for (int i = size(ant->visited); i > size(ant->visited) - parameters->memory; i--)
+	for (int i = size(ant.visited); i > size(ant.visited) - m_parameters.memory; i--)
 	{
 		if (i <= 0)
 			break;
-		if(std::get<0>(ant->visited[i-1]) == width && 
-			std::get<1>(ant->visited[i-1]) == height)
+		if(std::get<0>(ant.visited[i-1]) == width && 
+			std::get<1>(ant.visited[i-1]) == height)
 			return tuple<tuple<int, int>, int, float>{position, 0, 0.0};
 	}
 
 	return tuple<tuple<int, int>, float, float>{position, GetHeuristic(position), GetPheromone(position)};
 }
 
-tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
+tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 {
 	const int surrounding = 9;
 	vector<tuple<tuple<int, int>, float, float>> neighbors;
 	for (int i = 0; i < surrounding; i++)
 	{
 		auto neighbor = GetMooreNeighborhood(ant, i);
-		if (get<0>(neighbor) != ant->position)
+		if (get<0>(neighbor) != ant.position)
 			neighbors.push_back(neighbor);
 	}
 
@@ -91,13 +110,13 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 
 
 	//todo clean this mess
-	if (q <= parameters->q0)
+	if (q <= m_parameters.q0)
 	{
 		int maxIndex = 0;
 		float maxValue = 0;
 		for (int i = 0; i < neighbors.size(); ++i)
 		{
-			float value = pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta);
+			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
 			if (value > maxValue)
 			{
 				maxValue = value;
@@ -116,14 +135,14 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 		float sum = 0;
 		for (int i = 0; i < neighbors.size(); ++i)
 		{
-			sum += pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta);
+			sum += pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
 		}
 
 		int maxIndex = 0;
 		float maxValue = -1;
 		for (int i = 0; i < neighbors.size(); ++i)
 		{			
-			float value = pow(std::get<2>(neighbors[i]), parameters->alpha) * pow(std::get<1>(neighbors[i]), parameters->beta) / sum;
+			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta) / sum;
 			if (value > maxValue)
 			{
 				maxValue = value;
@@ -139,14 +158,14 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant* ant)
 	}
 }
 
-void AntColonySystem::Move(Ant* ant)
+void AntColonySystem::Move(Ant& ant)
 {
 	tuple<int, int> nextPosition = SelectNextPixel(ant);
 	
 	if (std::find(alreadyVisitedPositions.begin(), alreadyVisitedPositions.end(), nextPosition) == alreadyVisitedPositions.end())
 		alreadyVisitedPositions.push_back(nextPosition);
 
-	ant->Move(nextPosition);
+	ant.Move(nextPosition);
 }
 
 void AntColonySystem::UpdateGlobalPheromone()
@@ -154,16 +173,16 @@ void AntColonySystem::UpdateGlobalPheromone()
 	vector<tuple<int, int>> visitedPositions;
 
 	ResetAntsPheromone();
-	for (auto ant : ants)
+	for (auto& ant : ants)
 	{
-		for (int i = size(ant->visited); i > size(ant->visited) - parameters->constructionSteps; i--)
+		for (int i = size(ant->visited); i > size(ant->visited) - m_parameters.constructionSteps; i--)
 		{
 			if (i <= 0)
 				break;
 			ant->pheromone += float(GetHeuristic(ant->visited[i - 1]));
 			visitedPositions.push_back(ant->visited[i-1]);
 		}
-		ant->pheromone /= float(parameters->constructionSteps);
+		ant->pheromone /= float(m_parameters.constructionSteps);
 	}
 	
 	// remove duplicated positions 
@@ -173,9 +192,9 @@ void AntColonySystem::UpdateGlobalPheromone()
 	for (auto position : visitedPositions)
 	{
 		float totalDeltaTau = 0;
-		for (auto ant : ants)
+		for (auto& ant : ants)
 		{
-			for (int i = size(ant->visited); i > size(ant->visited) - parameters->constructionSteps; i--)
+			for (int i = size(ant->visited); i > size(ant->visited) - m_parameters.constructionSteps; i--)
 			{
 				if (i <= 0)
 					break;
@@ -183,8 +202,8 @@ void AntColonySystem::UpdateGlobalPheromone()
 					totalDeltaTau += ant->pheromone;
 			}
 		}
-		SetPheromone(position, GetPheromone(position) * (1 - parameters->rho));
-		UpdatePheromone(position, parameters->rho * totalDeltaTau);
+		SetPheromone(position, GetPheromone(position) * (1 - m_parameters.rho));
+		UpdatePheromone(position, m_parameters.rho * totalDeltaTau);
 	}
 	
 	// positions with pheromones from previous iterations
@@ -198,37 +217,37 @@ void AntColonySystem::UpdateGlobalPheromone()
 	while (iterator != std::end(notUpdated))
 	{
 		
-		float newPheromoneValue = GetPheromone(*iterator) * (1 - parameters->rho);
-		if (newPheromoneValue > parameters->tauini) 
+		float newPheromoneValue = GetPheromone(*iterator) * (1 - m_parameters.rho);
+		if (newPheromoneValue > m_parameters.tauini) 
 		{
 			SetPheromone(*iterator, newPheromoneValue);
 			++iterator;
 		}
 		else
 		{
-			SetPheromone(*iterator, parameters->tauini);
+			SetPheromone(*iterator, m_parameters.tauini);
 			iterator = notUpdated.erase(iterator);
 		}
 	}
 }
 
-void AntColonySystem::UpdateLocalPheromone(Ant* ant)
+void AntColonySystem::UpdateLocalPheromone(Ant& ant)
 {
-	float updated = (1 - parameters->phi) * GetPheromone(ant->position) + parameters->phi * parameters->tauini;
-	SetPheromone(ant->position, updated);
-	ant->pheromone += updated;
+	float updated = (1 - m_parameters.phi) * GetPheromone(ant.position) + m_parameters.phi * m_parameters.tauini;
+	SetPheromone(ant.position, updated);
+	ant.pheromone += updated;
 }
 
 float AntColonySystem::GetHeuristic(tuple<int, int> position)
 {
-	return float(parameters->heuristic[std::get<0>(position)][std::get<1>(position)]) / heuristicMax;
+	return float(m_parameters.heuristic[std::get<0>(position)][std::get<1>(position)]) / heuristicMax;
 }
 
 void AntColonySystem::DisplayResults()
 {
 	float min = 1;
 	float max = 0;
-	for (vector<float> pheromoneRow : parameters->pheromone)
+	for (vector<float> pheromoneRow : m_parameters.pheromone)
 	{
 		for (float pheromone : pheromoneRow)
 		{
@@ -242,8 +261,8 @@ void AntColonySystem::DisplayResults()
 	
 	for (tuple<int, int> position : alreadyVisitedPositions)
 	{
-		parameters->edges[std::get<0>(position)][std::get<1>(position)] = int(round(abs((GetPheromone(position) - min) / diff) * 255));
-		//parameters->edges[std::get<0>(position)][std::get<1>(position)] = 255;
+		m_parameters.edges[std::get<0>(position)][std::get<1>(position)] = int(round(abs((GetPheromone(position) - min) / diff) * 255));
+		//m_parameters.edges[std::get<0>(position)][std::get<1>(position)] = 255;
 	}
 
 	cv::Mat img = cv::Mat(maxHeight, maxWidth, CV_8UC1);
@@ -251,7 +270,7 @@ void AntColonySystem::DisplayResults()
 	{
 		for (int j = 0; j < maxHeight; j++)
 		{
-			img.at<uchar>(j, i) = uchar(parameters->edges[i][j]);
+			img.at<uchar>(j, i) = uchar(m_parameters.edges[i][j]);
 		}
 	}
 
@@ -263,7 +282,7 @@ void AntColonySystem::DisplayResults()
 
 void AntColonySystem::ResetAntsPheromone()
 {
-	for (Ant* ant : ants)
+	for (auto& ant : ants)
 	{
 		ant->pheromone = 0.0;
 	}
@@ -271,31 +290,31 @@ void AntColonySystem::ResetAntsPheromone()
 
 float AntColonySystem::GetPheromone(tuple<int, int> position)
 {
-	return parameters->pheromone[std::get<0>(position)][std::get<1>(position)];
+	return m_parameters.pheromone[std::get<0>(position)][std::get<1>(position)];
 }
 
 
 void AntColonySystem::UpdatePheromone(tuple<int, int> position, float value)
 {
-	parameters->pheromone[std::get<0>(position)][std::get<1>(position)] += value;
+	m_parameters.pheromone[std::get<0>(position)][std::get<1>(position)] += value;
 }
 
 void AntColonySystem::SetPheromone(tuple<int, int> position, float value)
 {
-	parameters->pheromone[std::get<0>(position)][std::get<1>(position)] = value;
+	m_parameters.pheromone[std::get<0>(position)][std::get<1>(position)] = value;
 }
 
 void AntColonySystem::Run()
 {
-	std::cout << parameters->imagePath << std::endl;
-	for (int i = 0; i < parameters->iterations; i++)
+	std::cout << m_parameters.imagePath << std::endl;
+	for (int i = 0; i < m_parameters.iterations; i++)
 	{
-		for (int j = 0; j < parameters->constructionSteps; j++)
+		for (int j = 0; j < m_parameters.constructionSteps; j++)
 		{
-			for (Ant* ant : ants)
+			for (auto& ant : ants)
 			{
-				Move(ant);
-				UpdateLocalPheromone(ant);
+				Move(*ant);
+				UpdateLocalPheromone(*ant);
 			}
 		}
 		UpdateGlobalPheromone();
