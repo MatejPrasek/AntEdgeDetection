@@ -60,19 +60,5 @@ void ParseIntensity(Parameters &parameters)
 	}
 	intensity.close();
 	heuristic.close();
-
-	//Mat img = Mat(grayScaleImage.rows, grayScaleImage.cols, CV_8UC1);
-	//for (int i = 0; i < grayScaleImage.cols; i++)
-	//{
-	//	for (int j = 0; j < grayScaleImage.rows; j++)
-	//	{
-	//		img.at<uchar>(j, i) = m_parameters->intensity[i][j];
-	//	}
-	//}
-
-	//namedWindow("Display window", WINDOW_AUTOSIZE);
-	//imshow("Display window", img);        
-
-	//waitKey(0);
 }
 

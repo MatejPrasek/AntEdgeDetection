@@ -16,8 +16,6 @@ struct Parameters
 	int iterations{};
 	float q0{};
 	float tauini{};
-	//int horizontalPartitions{};
-	//int verticalPartitions{};
 	int memory{};
 	bool debug{};
 	bool random{};

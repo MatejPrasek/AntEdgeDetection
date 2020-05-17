@@ -1,6 +1,5 @@
 #pragma once
 #include <tuple>
-#include <vector>
 #include <deque>
 
 class Ant
@@ -8,7 +7,6 @@ class Ant
 public:
 	std::tuple<int, int> position;
 	std::deque<std::tuple<int, int>> visited;
-	//std::vector<std::tuple<int, int>> visited;
 	float pheromone;
 
 	Ant(std::tuple<int, int> position, float pheromone, int visitedSize, int constructionSteps);

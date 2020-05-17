@@ -8,7 +8,8 @@ AntColonySystem::AntColonySystem(Parameters parameters) : m_parameters(std::move
 	m_parameters.pheromone = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
 	m_parameters.edges = vector<vector<float>>(maxWidth, vector<float>(maxHeight));
 
-	if(!m_parameters.debug) srand(time(NULL));
+	if (!m_parameters.debug) srand(time(NULL));
+	else srand(1);
 	
 	cv::Mat initPosition = cv::Mat(maxHeight, maxWidth, CV_8UC1);
 	for (int i = 0; i < maxWidth; i++)
@@ -27,31 +28,26 @@ AntColonySystem::AntColonySystem(Parameters parameters) : m_parameters(std::move
 			m_parameters.edges[i][j] = 0;
 		}
 
-	//float horizontalSegment = maxWidth / float(m_parameters.horizontalPartitions);
-	//float verticalSegment = maxHeight / float(m_parameters.verticalPartitions);
-
-	//vector<tuple<tuple<int, int>, int>> MaxHeuristic = vector<tuple<tuple<int, int>, int>>(maxWidth*maxHeight);
+	vector<tuple<tuple<int, int>, int>> MaxHeuristic = vector<tuple<tuple<int, int>, int>>(maxWidth*maxHeight);
 	
-	//for (int i = 0; i < maxWidth; i++)
-	//	for (int j = 0; j < maxHeight; j++)
-	//	{
-	//		MaxHeuristic.emplace_back(tuple<int, int>(i, j), m_parameters.heuristic[i][j]);
-	//	}
+	for (int i = 0; i < maxWidth; i++)
+		for (int j = 0; j < maxHeight; j++)
+		{
+			MaxHeuristic.emplace_back(tuple<int, int>(i, j), m_parameters.heuristic[i][j]);
+		}
 
-	//sort(MaxHeuristic.begin(), MaxHeuristic.end(), SortPositionValueTuple);
-	//todo get only needed values
+	sort(MaxHeuristic.begin(), MaxHeuristic.end(), SortPositionValueTuple);
 	
 	ants = vector<unique_ptr<Ant>>(m_parameters.ants);
 	for (int i = 0; i < m_parameters.ants; ++i)
 	{
 		tuple<int, int> position;
-		//todo non-random starting position
 		if(m_parameters.random)
 			position = tuple<int, int>(rand() % maxWidth, rand() % maxHeight);
-		//else
-		//{
-		//	
-		//}
+		else
+		{
+			position = tuple<int, int>(std::get<0>(std::get<0>(MaxHeuristic[i])), std::get<1>(std::get<0>(MaxHeuristic[i])));
+		}
 		ants[i] = make_unique<Ant>(position, 0, m_parameters.memory, m_parameters.constructionSteps);
 
 		circle(initPosition, cv::Point(std::get<0>(ants[i]->position), std::get<1>(ants[i]->position)), 2, cv::Scalar(255,255,255));
@@ -62,10 +58,10 @@ AntColonySystem::AntColonySystem(Parameters parameters) : m_parameters(std::move
 	cv::waitKey(0);
 }
 
-//bool AntColonySystem::SortPositionValueTuple(const tuple<tuple<int, int>, int> &first, const tuple<tuple<int, int>, int> &second)
-//{
-//	return get<1>(first) < get<1>(second);
-//}
+bool AntColonySystem::SortPositionValueTuple(const tuple<tuple<int, int>, int> &first, const tuple<tuple<int, int>, int> &second)
+{
+	return get<1>(first) > get<1>(second);
+}
 
 tuple<tuple<int, int>, float, float> AntColonySystem::GetMooreNeighborhood(Ant& ant, int index)
 {
@@ -107,7 +103,6 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 	}
 
 	float q = float(rand()) / RAND_MAX;
-
 
 	//todo clean this mess
 	if (q <= m_parameters.q0)
@@ -245,6 +240,7 @@ float AntColonySystem::GetHeuristic(tuple<int, int> position)
 
 void AntColonySystem::DisplayResults()
 {
+	const int threshold = 0;
 	float min = 1;
 	float max = 0;
 	for (vector<float> pheromoneRow : m_parameters.pheromone)
@@ -258,11 +254,10 @@ void AntColonySystem::DisplayResults()
 	cout << "min: " << min << endl;
 	cout << "max: " << max << endl;
 	float diff = abs(max - min);
-	
+
 	for (tuple<int, int> position : alreadyVisitedPositions)
 	{
 		m_parameters.edges[std::get<0>(position)][std::get<1>(position)] = int(round(abs((GetPheromone(position) - min) / diff) * 255));
-		//m_parameters.edges[std::get<0>(position)][std::get<1>(position)] = 255;
 	}
 
 	cv::Mat img = cv::Mat(maxHeight, maxWidth, CV_8UC1);
@@ -270,10 +265,13 @@ void AntColonySystem::DisplayResults()
 	{
 		for (int j = 0; j < maxHeight; j++)
 		{
-			img.at<uchar>(j, i) = uchar(m_parameters.edges[i][j]);
+			if(m_parameters.edges[i][j] >= threshold)
+				img.at<uchar>(j, i) = 255;
+			else
+				img.at<uchar>(j, i) = 0;
 		}
 	}
-
+	
 	cv::namedWindow("Edges", cv::WINDOW_AUTOSIZE);
 	imshow("Edges", img);
 
