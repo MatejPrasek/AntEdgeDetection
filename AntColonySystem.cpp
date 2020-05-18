@@ -79,9 +79,9 @@ tuple<tuple<int, int>, float, float> AntColonySystem::GetMooreNeighborhood(Ant& 
 		return tuple<tuple<int, int>, int, float>{ant.position, 0, 0.0};
 
 	//verify that neighbor position isn't in ant's memory
-	for (int i = size(ant.visited); i > size(ant.visited) - m_parameters.memory; i--)
+	for (unsigned int i = ant.visited.size(); i > ant.visited.size() - m_parameters.memory; i--)
 	{
-		if (i <= 0)
+		if (i == 0)
 			break;
 		if(std::get<0>(ant.visited[i-1]) == width && 
 			std::get<1>(ant.visited[i-1]) == height)
@@ -109,7 +109,7 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 	{
 		int maxIndex = 0;
 		float maxValue = 0;
-		for (int i = 0; i < neighbors.size(); ++i)
+		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{
 			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
 			if (value > maxValue)
@@ -128,14 +128,14 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 	else
 	{
 		float sum = 0;
-		for (int i = 0; i < neighbors.size(); ++i)
+		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{
 			sum += pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
 		}
 
 		int maxIndex = 0;
 		float maxValue = -1;
-		for (int i = 0; i < neighbors.size(); ++i)
+		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{			
 			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta) / sum;
 			if (value > maxValue)
@@ -170,9 +170,9 @@ void AntColonySystem::UpdateGlobalPheromone()
 	ResetAntsPheromone();
 	for (auto& ant : ants)
 	{
-		for (int i = size(ant->visited); i > size(ant->visited) - m_parameters.constructionSteps; i--)
+		for (unsigned int i = ant->visited.size(); i > ant->visited.size() - m_parameters.constructionSteps; i--)
 		{
-			if (i <= 0)
+			if (i == 0)
 				break;
 			ant->pheromone += float(GetHeuristic(ant->visited[i - 1]));
 			visitedPositions.push_back(ant->visited[i-1]);
@@ -189,9 +189,9 @@ void AntColonySystem::UpdateGlobalPheromone()
 		float totalDeltaTau = 0;
 		for (auto& ant : ants)
 		{
-			for (int i = size(ant->visited); i > size(ant->visited) - m_parameters.constructionSteps; i--)
+			for (unsigned int i = ant->visited.size(); i > ant->visited.size() - m_parameters.constructionSteps; i--)
 			{
-				if (i <= 0)
+				if (i == 0)
 					break;
 				if (position == ant->visited[i - 1])
 					totalDeltaTau += ant->pheromone;
@@ -275,7 +275,7 @@ void AntColonySystem::DisplayResults(int iter)
 	cv::namedWindow("Edges", cv::WINDOW_AUTOSIZE);
 	imshow("Edges", img);
 
-	cv::imwrite(m_parameters.resultsPath + "Iteration" + std::to_string(iter) + ".png", img);
+	cv::imwrite( "RESULTS/Iteration" + std::to_string(iter) + ".png", img);
 	
 	cv::waitKey(500);
 }

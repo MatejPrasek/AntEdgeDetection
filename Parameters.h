@@ -1,12 +1,13 @@
 #pragma once
 #include <string>
+#include<vector>
 
 using namespace std;
 
 struct Parameters
 {
 	// command line arguments
-	string imagePath{};
+	string imagePath;
 	float alpha{};
 	float beta{};
 	int ants{};
@@ -21,11 +22,8 @@ struct Parameters
 	bool random{};
 
 	// images
-	vector<vector<int>> intensity;
-	vector<vector<int>> heuristic;
-	vector<vector<float>> pheromone;
-	vector<vector<float>> edges;
-
-	// metric
-	string resultsPath;
+	std::vector<std::vector<int>> intensity;
+	std::vector<std::vector<int>> heuristic;
+	std::vector<std::vector<float>> pheromone;
+	std::vector<std::vector<float>> edges;
 };

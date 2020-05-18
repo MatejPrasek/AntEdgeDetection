@@ -1,5 +1,4 @@
-#pragma once
-#include "lib/opencv.hpp"
+#include <opencv2/opencv.hpp>
 #include "Parameters.h"
 #include "Ant.h"
 

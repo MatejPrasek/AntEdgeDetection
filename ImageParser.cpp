@@ -38,9 +38,9 @@ void ParseIntensity(Parameters &parameters)
 	cvtColor(RGBImage, grayScaleImage, COLOR_RGB2GRAY);
 
 	ofstream intensity;
-	intensity.open(parameters.resultsPath + "intensity.txt");
+	intensity.open( "RESULTS/intensity.txt");
 	ofstream heuristic;
-	heuristic.open(parameters.resultsPath + "heuristic.txt");
+	heuristic.open("RESULTS/heuristic.txt");
 
 	parameters.intensity = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
 	parameters.heuristic = vector<vector<int>>(grayScaleImage.cols, vector<int>(grayScaleImage.rows));
