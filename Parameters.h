@@ -25,4 +25,7 @@ struct Parameters
 	vector<vector<int>> heuristic;
 	vector<vector<float>> pheromone;
 	vector<vector<float>> edges;
+
+	// metric
+	string resultsPath;
 };

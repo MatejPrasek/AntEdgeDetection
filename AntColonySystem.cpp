@@ -55,7 +55,7 @@ AntColonySystem::AntColonySystem(Parameters parameters) : m_parameters(std::move
 
 	namedWindow("Initial positions", cv::WINDOW_AUTOSIZE);
 	imshow("Initial positions", initPosition);
-	cv::waitKey(0);
+	cv::waitKey(500);
 }
 
 bool AntColonySystem::SortPositionValueTuple(const tuple<tuple<int, int>, int> &first, const tuple<tuple<int, int>, int> &second)
@@ -238,7 +238,7 @@ float AntColonySystem::GetHeuristic(tuple<int, int> position)
 	return float(m_parameters.heuristic[std::get<0>(position)][std::get<1>(position)]) / heuristicMax;
 }
 
-void AntColonySystem::DisplayResults()
+void AntColonySystem::DisplayResults(int iter)
 {
 	const int threshold = 0;
 	float min = 1;
@@ -265,16 +265,18 @@ void AntColonySystem::DisplayResults()
 	{
 		for (int j = 0; j < maxHeight; j++)
 		{
-			if(m_parameters.edges[i][j] >= threshold)
-				img.at<uchar>(j, i) = 255;
-			else
+			if(m_parameters.edges[i][j] > threshold)
 				img.at<uchar>(j, i) = 0;
+			else
+				img.at<uchar>(j, i) = 255;
 		}
 	}
 	
 	cv::namedWindow("Edges", cv::WINDOW_AUTOSIZE);
 	imshow("Edges", img);
 
+	cv::imwrite(m_parameters.resultsPath + "Iteration" + std::to_string(iter) + ".png", img);
+	
 	cv::waitKey(500);
 }
 
@@ -316,9 +318,9 @@ void AntColonySystem::Run()
 			}
 		}
 		UpdateGlobalPheromone();
-		DisplayResults();
+		DisplayResults(i+1);
 		ResetAntsPheromone();
 		cout << "Iteration " << i + 1 << " ended." << endl;
 	}
-	cv::waitKey(0);
+	cv::waitKey(500);
 }

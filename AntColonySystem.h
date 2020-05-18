@@ -22,7 +22,7 @@ private:
 	void UpdateGlobalPheromone();
 	void UpdateLocalPheromone(Ant& ant);
 	float GetHeuristic(tuple<int, int> position);
-	void DisplayResults();
+	void DisplayResults(int iter);
 	void ResetAntsPheromone();
 	float GetPheromone(tuple<int, int> position);
 	void UpdatePheromone(tuple<int, int> position, float value);

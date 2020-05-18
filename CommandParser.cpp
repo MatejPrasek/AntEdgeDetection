@@ -4,6 +4,12 @@ void Parse(int argc, char** argv, Parameters &parameters)
 {
 	cxxopts::Options options("ACO_edge_detection", "ACO for edge detection - bachelor thesis");
 
+#ifdef WIN32
+	const string pathSeparator = "\\";
+#else
+	const string pathSeparator = "/";
+#endif
+	
 	options.add_options()
 		("i,image", "Path to an image to be processed", cxxopts::value<std::string>()->default_value("./standard_test_images/256/lena_color.tif"))
 		("a,alpha", "Pheromone coefficient", cxxopts::value<float>()->default_value("1"))
@@ -18,6 +24,7 @@ void Parse(int argc, char** argv, Parameters &parameters)
 		("m,mem", "Ant's memory (Number of positions of last visited pixels)", cxxopts::value<int>()->default_value("8"))
 		("d,debug", "For debugging purposes", cxxopts::value<bool>()->default_value("false"))
 		("random", "Assign ants starting positions randomly", cxxopts::value<bool>()->default_value("false"))
+		("resultsPath", "Path, where the results will be stored", cxxopts::value<string>()->default_value("parameterless"));
 		;
 
 	auto parsed = options.parse(argc, argv);
@@ -35,4 +42,5 @@ void Parse(int argc, char** argv, Parameters &parameters)
 	parameters.memory = parsed["mem"].as<int>();
 	parameters.debug = parsed["debug"].as<bool>();
 	parameters.random = parsed["random"].as<bool>();
+	parameters.resultsPath = "." + pathSeparator + "RESULTS" + pathSeparator + parsed["resultsPath"].as<string>() + pathSeparator;
 }
