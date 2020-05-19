@@ -107,7 +107,7 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 	if (q <= m_parameters.q0)
 	{
 		int maxIndex = 0;
-		float maxValue = 0;
+		float maxValue = -1;
 		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{
 			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
@@ -135,8 +135,13 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 		int maxIndex = 0;
 		float maxValue = -1;
 		for (unsigned int i = 0; i < neighbors.size(); ++i)
-		{			
-			float value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta) / sum;
+		{
+			float value;
+			if (sum == 0)
+				value = 0;
+			else
+				value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta) / sum;
+			
 			if (value > maxValue)
 			{
 				maxValue = value;
