@@ -104,7 +104,6 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 
 	float q = float(rand()) / RAND_MAX;
 
-	//todo clean this mess
 	if (q <= m_parameters.q0)
 	{
 		int maxIndex = 0;
@@ -240,7 +239,6 @@ float AntColonySystem::GetHeuristic(tuple<int, int> position)
 
 void AntColonySystem::DisplayResults(int iter)
 {
-	const int threshold = 0;
 	float min = 1;
 	float max = 0;
 	for (vector<float> pheromoneRow : m_parameters.pheromone)
@@ -265,7 +263,7 @@ void AntColonySystem::DisplayResults(int iter)
 	{
 		for (int j = 0; j < maxHeight; j++)
 		{
-			if(m_parameters.edges[i][j] > threshold)
+			if(m_parameters.edges[i][j] > float(m_parameters.threshold))
 				img.at<uchar>(j, i) = 0;
 			else
 				img.at<uchar>(j, i) = 255;
@@ -322,5 +320,6 @@ void AntColonySystem::Run()
 		ResetAntsPheromone();
 		cout << "Iteration " << i + 1 << " ended." << endl;
 	}
-	cv::waitKey(500);
+	if(m_parameters.debug) cv::waitKey(0);
+	else cv::waitKey(500);
 }

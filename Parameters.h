@@ -7,7 +7,7 @@ using namespace std;
 struct Parameters
 {
 	// command line arguments
-	string imagePath;
+	string imagePath{};
 	float alpha{};
 	float beta{};
 	int ants{};
@@ -20,7 +20,8 @@ struct Parameters
 	int memory{};
 	bool debug{};
 	bool random{};
-
+	int threshold{};
+	
 	// images
 	std::vector<std::vector<int>> intensity;
 	std::vector<std::vector<int>> heuristic;

@@ -18,6 +18,7 @@ void Parse(int argc, char** argv, Parameters &parameters)
 		("m,mem", "Ant's memory (Number of positions of last visited pixels)", cxxopts::value<int>()->default_value("8"))
 		("d,debug", "For debugging purposes", cxxopts::value<bool>()->default_value("false"))
 		("random", "Assign ants starting positions randomly", cxxopts::value<bool>()->default_value("false"))
+		("h,threshold", "Threshold for image rendering", cxxopts::value<int>()->default_value("0"))
 		;
 
 	auto parsed = options.parse(argc, argv);
@@ -35,4 +36,5 @@ void Parse(int argc, char** argv, Parameters &parameters)
 	parameters.memory = parsed["mem"].as<int>();
 	parameters.debug = parsed["debug"].as<bool>();
 	parameters.random = parsed["random"].as<bool>();
+	parameters.threshold = parsed["threshold"].as<int>();
 }
