@@ -1,13 +1,1 @@
-*.vcxproj*
-
-AntEdgeDetection.sln
-
-.vs/*
-
-Debug/*
-Release/*
-
-heuristic.txt
-
-intensity.txt
-
+*.o

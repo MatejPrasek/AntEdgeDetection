@@ -127,27 +127,33 @@ tuple<int, int> AntColonySystem::SelectNextPixel(Ant& ant)
 	else
 	{
 		float sum = 0;
-		for (auto& neighbor : neighbors)
+		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{
-			sum += pow(std::get<2>(neighbor), m_parameters.alpha) * pow(std::get<1>(neighbor), m_parameters.beta);
+			sum += pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta);
 		}
 
-		const float probability = float(rand()) / RAND_MAX;
-		float value = 0.0;
-		
-		for (auto& neighbor : neighbors)
+		int maxIndex = 0;
+		float maxValue = -1;
+		for (unsigned int i = 0; i < neighbors.size(); ++i)
 		{
+			float value;
 			if (sum == 0)
-				break;
+				value = 0;
 			else
-				value += pow(std::get<2>(neighbor), m_parameters.alpha) * pow(std::get<1>(neighbor), m_parameters.beta) / sum;
-
-			if (value > probability)
-				return std::get<0>(neighbor);
+				value = pow(std::get<2>(neighbors[i]), m_parameters.alpha) * pow(std::get<1>(neighbors[i]), m_parameters.beta) / sum;
+			
+			if (value > maxValue)
+			{
+				maxValue = value;
+				maxIndex = i;
+			}
 		}
 
 		// No valid neighbor, return random neighbor
-		return std::get<0>(neighbors[rand() % neighbors.size()]);
+		if (maxValue == 0)
+			return std::get<0>(neighbors[rand() % neighbors.size()]);
+		
+		return std::get<0>(neighbors[maxIndex]);
 	}
 }
 
